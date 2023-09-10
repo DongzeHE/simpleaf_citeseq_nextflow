@@ -1,0 +1,13 @@
+
+name: simpleaf
+channels:
+  - bioconda
+  - defaults
+  - conda-forge
+  - anaconda
+dependencies:
+  # Default bismark
+  - simpleaf
+  - piscem
+  - gzip
+  - gawk

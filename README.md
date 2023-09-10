@@ -4,7 +4,7 @@ This workflow is designed to process multiple CITE-seq datasets from the same sp
 
 ## Usage
 Running nextflow program is easy: you need to have a nextflow installed on your system by following their [installation instructions](https://www.nextflow.io/docs/latest/getstarted.html#installation). Once you have nextflow installed, you can fill in the parameters in the `nextflow.config` file by replacing the existing values with your own. For example, you can use an existing salmon index instead of building a new one by replacing the `salmon_index` parameter with the path to your salmon index.
-```json
+```
 params {
     simpleaf_index {
         existing_index_dir = "/path/to/salmon/index"
