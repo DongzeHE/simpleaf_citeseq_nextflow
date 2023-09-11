@@ -2,5 +2,5 @@ nextflow
 .nextflow
 .nextflow.*
 pipeline_trace*
-nf_pipeline
+workflow_output
 work

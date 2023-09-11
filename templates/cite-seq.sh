@@ -1,5 +1,6 @@
+#!/usr/bin/env bash
 
-cat <<EOF> cite-seq.jsonnet
+cat <<EOF> ${sample_name}_instantiated_template.jsonnet
 // feature barcoding can have three parts
 // 1. antibody barcoding (optional)
 // 2. cell multiplexing (optional)
@@ -28,7 +29,7 @@ local workflow = {
 
         // This value will be assigned to all simpleaf commands that have no --threads arg specified
         // Optional: commands will use their default setting if this is null.
-        "threads": ${num_threads}, // "threads": "16",
+        "threads": "${num_threads}", // "threads": "16",
         
         // The parent directory of all simpleaf command output folders.
         // If this is leaved as null, you have to specify `--output` when running `simpleaf workflow`
@@ -83,15 +84,11 @@ local workflow = {
                     "Mapping Reads FASTQ Files": {
                         // read1 (technical reads) files separated by comma (,)
                         // having multiple files and they are all in a directory? try the following bash command to get their name (Don't forget to quote them!)
-                        // $ find -L your/fastq/absolute/path -name "*_R1_*" -type f | sort | paste -sd, -
-                        // Change "*_R1_*" to the file name pattern of your files if it dosn't fit
-                        "--reads1": $rna_read1,
+                        "--reads1": "$rna_read1",
 
                         // read2 (biological reads) files separated by comma (,)
                         // having multiple files and they are all in a directory? try the following bash command to get their name (Don't forget to quote them!)
-                        // $ find -L your/fastq/absolute/path -name "*_R2_*" -type f | sort | paste -sd, -
-                        // Change "*_R2_*" to the file name pattern of your files if it dosn't fit
-                        "--reads2": $rna_read2,
+                        "--reads2": "$rna_read2",
                     },
                 },
             }
@@ -109,7 +106,7 @@ local workflow = {
                 // The file should ends with .csv or .csv.gz.
                 // If your file is already in FASTA format, use that as the "--ref-seq" field in the Optional Configuration
                 // and leave this field as null.
-                "ADT reference barcode CSV file path": ${params.adt_reference_barcode_csv},
+                "ADT reference barcode CSV file path": "${adt_reference_barcode_csv_gz}",
             },
 
             // arguments for running `simpleaf quant`
@@ -120,15 +117,13 @@ local workflow = {
                 "Recommended Mapping Option": {
                         // read1 (technical reads) files separated by comma (,)
                         // having multiple files and they are all in a directory? try the following bash command to get their name (Don't forget to quote them!)
-                        // $ find -L your/fastq/absolute/path -name "*_R1_*" -type f | sort | paste -sd, -
                         // Change "*_R1_*" to the file name pattern of your files if it dosn't fit
-                        "--reads1": $adt_read1,
+                        "--reads1": "$adt_read1",
 
                         // read2 (biological reads) files separated by comma (,)
                         // having multiple files and they are all in a directory? try the following bash command to get their name (Don't forget to quote them!)
-                        // $ find -L your/fastq/absolute/path -name "*_R2_*" -type f | sort | paste -sd, -
                         // Change "*_R2_*" to the file name pattern of your files if it dosn't fit
-                        "--reads2": $adt_read2,
+                        "--reads2": "$adt_read2",
                     },
             },
         },
@@ -144,9 +139,8 @@ local workflow = {
                 // The path to the hash tag oligos (HTO) reference barcode CSV file
                 // The file should be ending with .csv or .csv.gz.
                 // Current we do not support other format.
-                "HTO reference barcode CSV file path": ${params.hto_reference_barcode_csv}},
+                "HTO reference barcode CSV file path": "$hto_reference_barcode_csv_gz",
             },
-
             // arguments for running `simpleaf quant`
             "simpleaf_quant": {
                 "Step": 12,
@@ -155,13 +149,11 @@ local workflow = {
                 "Recommended Mapping Option": {
                         // read1 (technical reads) files separated by comma (,)
                         // having multiple files and they are all in a directory? try the following bash command to get their name (Don't forget to quote them!)
-                        // $ find -L your/fastq/absolute/path -name "*_R1_*" -type f | sort | paste -sd, -
-                        "--reads1": $hto_read1,
+                        "--reads1": "$hto_read1",
 
                         // read2 (biological reads) files separated by comma (,)
                         // having multiple files and they are all in a directory? try the following bash command to get their name (Don't forget to quote them!)
-                        // $ find -L your/fastq/absolute/path -name "*_R1_*" -type f | sort | paste -sd, -
-                        "--reads2": $hto_read2,
+                        "--reads2": "$hto_read2",
                 },
             },
         },
@@ -231,7 +223,7 @@ local workflow = {
                 // the transcript name to gene name mapping TSV file.
                 // Simpleaf will find the correct t2g map file for splici and spliceu reference.
                 // This is required ONLY if `--ref-seq` is specified in the corresponding simpleaf index command. 
-                "--t2g-map": null,
+                "--t2g-map": "$t2g_path",
 
                 "Other Mapping Options": {
                     // Option 1:
@@ -240,13 +232,13 @@ local workflow = {
                     // and specify the path to the index here  
                     "1. Mapping Reads FASTQ Files against an existing index": {
                         // read1 (technical reads) files separated by comma (,)
-                        "--reads1": $rna_read1,
+                        "--reads1": "$rna_read1",
 
                         // read2 (biological reads) files separated by comma (,)
-                        "--reads2": $rna_read2,
+                        "--reads2": "$rna_read2",
 
                         // the path to an EXISTING salmon/piscem reference index
-                        "--index": $simpleaf_index_path,
+                        "--index": "$simpleaf_index_path",
                     },
 
                     // Option 2:
@@ -518,7 +510,7 @@ local workflow = {
             "Step": 5,
             "Program Name": "awk",
             "Active": true,
-            "Arguments": ["-F","','","'NR>1 {sub(/ /,\"_\",$1);print $1\"\\t\"$1}'","TBD",">","TBD"],
+            "Arguments": ["-F","','","'NR>1 {sub(/ /,\\\"_\\\",\\\$1);print \\\$1\"\\\\\\t\\\"\\\$1}'","TBD",">","TBD"],
         },
 
         // This command is used for converting the 
@@ -528,7 +520,7 @@ local workflow = {
             "Step": 6,
             "Program Name": "awk",
             "Active": true,
-            "Arguments": ["-F","','","'NR>1 {sub(/ /,\"_\",$1);print $1\"\\t\"$1}'","TBD",">","TBD"],
+            "Arguments": ["-F","','","'NR>1 {sub(/ /,\\\"_\\\",\\\$1);print \\\$1\\\"\\\\\\t\\\"\\\$1}'","TBD",">","TBD"],
         },
 
         // This command is used for converting the 
@@ -538,7 +530,7 @@ local workflow = {
             "Step": 7,
             "Program Name": "awk",
             "Active": true,
-            "Arguments": ["-F","','","'NR>1 {sub(/ /,\"_\",$1);print \">\"$1\"\\n\"$4}'","TBD",">","TBD"]
+            "Arguments": ["-F","','","'NR>1 {sub(/ /,\\\"_\\\",\\\$1);print \\\">\\\"\\\$1\\\"\\\\\\n\\\"\\\$4}'","TBD",">","TBD"]
         },
         
         // This command is used for converting the 
@@ -548,7 +540,7 @@ local workflow = {
             "Step": 8,
             "Program Name": "awk",
             "Active": true,
-            "Arguments": ["-F","','","'NR>1 {sub(/ /,\"_\",$1);print \">\"$1\"\\n\"$4}'","TBD",">","TBD"]
+            "Arguments": ["-F","','","'NR>1 {sub(/ /,\\\"_\\\",\\\$1);print \\\">\\\"\\\$1\\\"\\\\\\n\\\"\\\$4}'","TBD",">","TBD"]
         },
     },
 };
@@ -635,7 +627,7 @@ local activate_ext_calls(workflow, output_path, fb_ref_path) =
                     "Arguments": [
                         "-F",
                         "','",
-                        "'NR>1 {sub(/ /,\"_\",$1);print $1\"\\t\"$1}'",
+                        "'NR>1 {sub(/ /,\\\"_\\\",\\\$1);print \\\$1\\\"\\\\\\t\\\"\\\$1}'",
                         if fb_ref_path.hto != null then
                             if std.endsWith(fb_ref_path.hto, "gz") then 
                                 hto_ref_csv_path 
@@ -655,7 +647,7 @@ local activate_ext_calls(workflow, output_path, fb_ref_path) =
                 "Arguments": [
                     "-F",
                     "','",
-                    "'NR>1 {sub(/ /,\"_\",$1);print $1\"\\t\"$1}'",
+                    "'NR>1 {sub(/ /,\\\"_\\\",\\\$1);print \\\$1\\\"\\\\\\t\\\"\\\$1}'",
                         if fb_ref_path.adt != null then
                             if std.endsWith(fb_ref_path.adt, "gz") then 
                                 adt_ref_csv_path 
@@ -674,7 +666,7 @@ local activate_ext_calls(workflow, output_path, fb_ref_path) =
                 "Arguments": [
                     "-F",
                     "','",
-                    "'NR>1 {sub(/ /,\"_\",$1);print \">\"$1\"\\n\"$4}'",
+                    "'NR>1 {sub(/ /,\\\"_\\\",\\\$1);print \\\">\\\"\\\$1\\\"\\\\\\n\\\"\\\$4}'",
                         if fb_ref_path.hto != null then
                             if std.endsWith(fb_ref_path.hto, "gz") then 
                                 hto_ref_csv_path 
@@ -694,7 +686,7 @@ local activate_ext_calls(workflow, output_path, fb_ref_path) =
                 "Arguments": [
                     "-F",
                     "','",
-                    "'NR>1 {sub(/ /,\"_\",$1);print \">\"$1\"\\n\"$4}'",
+                    "'NR>1 {sub(/ /,\\\"_\\\",\\\$1);print \\\">\\\"\\\$1\\\"\\\\\\n\\\"\\\$4}'",
                         if fb_ref_path.adt != null then
                             if std.endsWith(fb_ref_path.adt, "gz") then 
                                 adt_ref_csv_path 
@@ -804,3 +796,10 @@ local workflow2 = utils.add_meta_args(workflow1);
 local workflow3 = workflow2 + activate_ext_calls(workflow2, valid_output, fb_ref_path);
 local workflow4 = utils.add_index_dir_for_simpleaf_index_quant_combo(workflow3) + add_explicit_pl(workflow3);
 workflow4
+
+EOF
+
+export ALEVIN_FRY_HOME="af_home"
+simpleaf set-paths
+
+simpleaf workflow run --template ${sample_name}_instantiated_template.jsonnet --output ${sample_name}/simpleaf_workflow_output

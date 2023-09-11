@@ -1,1 +1,4 @@
-sample1 rna_read1_1.fastq,rna_read1_2.fastq rna_read2_1.fastq,rna_read2_2.fastq adt_read1.fastq adt_read2.fastq hto_read1.fastq hto_read2.fastq
+sample_name	rna_read1	rna_read2	adt_read1	adt_read2	hto_read1	hto_read2
+sample1	rna_read1_1.fastq,rna_read1_2.fastq	rna_read2_1.fastq,rna_read2_2.fastq	adt_read1.fastq	adt_read2.fastq	hto_read1.fastq	hto_read2.fastq
+sample2	rna_read1_1.fastq,rna_read1_2.fastq	rna_read2_1.fastq,rna_read2_2.fastq	adt_read1.fastq	adt_read2.fastq	hto_read1.fastq	hto_read2.fastq
+
