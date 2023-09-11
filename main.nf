@@ -6,8 +6,11 @@ process rna_simpleaf_index_expanded {
         path gtf
 
     output:
-        path "simpleaf_index", emit: index_dir
-        path "simpleaf_index/index/t2g_3col.tsv", emit: t2g_path
+        tuple val("index_id"),
+            path("simpleaf_index"),
+            path("simpleaf_index/index/t2g_3col.tsv")
+        // path "simpleaf_index", emit: index_dir
+        // path "simpleaf_index/index/t2g_3col.tsv", emit: t2g_path
     script:
         cmd = "simpleaf index --output simpleaf_index --threads ${params.num_threads} --kmer-length ${params.kmer_length}"
         // options
@@ -49,8 +52,11 @@ process rna_simpleaf_index_refseq {
         path gtf
 
     output:
-        path "simpleaf_index", emit: index_dir
-        path "simpleaf_index/index/t2g.tsv", emit: t2g_path
+        tuple val("index_id"),
+            path("simpleaf_index"),
+            path("simpleaf_index/index/t2g.tsv")
+        // path "simpleaf_index", emit: index_dir
+        // path "simpleaf_index/index/t2g.tsv", emit: t2g_path
     script:
         cmd = "simpleaf index --output simpleaf_index --threads ${params.num_threads} --kmer-length ${params.kmer_length}"
         // options
@@ -83,14 +89,18 @@ process rna_simpleaf_index_existing {
         path t2g_path
 
     output:
-        path index_dir, emit: index_dir
-        path t2g_path, emit: t2g_path
+        tuple val("index_id"),
+            path(index_dir),
+            path(t2g_path)
+        // path index_dir, emit: index_dir
+        // path t2g_path, emit: t2g_path
     script:
         """
         cp $t2g_path $index_dir
         """
 }
 
+// the "index_id" is a place holder in case in the future we want to support multiple indices 
 workflow make_index {
     main:
         ep = params.rna_simpleaf_index.extended_transcriptome
@@ -108,8 +118,9 @@ workflow make_index {
             error "None of the index options are correctly specified; Cannot proceed"
         }
     emit:
-        index_dir = simpleaf_index_dir.index_dir
-        t2g_path = simpleaf_index_dir.t2g_path
+        simpleaf_index_dir
+        // index_dir = simpleaf_index_dir.index_dir
+        // t2g_path = simpleaf_index_dir.t2g_path
 }
 
 
@@ -117,7 +128,8 @@ workflow make_index {
 process make_template {
     publishDir "${params.output_dir}/${sample_name}", mode: 'copy'
     input:
-        tuple val(sample_name),
+        tuple val(index_id), 
+            val(sample_name),
             val(rna_read1),
             val(rna_read2),
             val(adt_read1),
@@ -127,10 +139,9 @@ process make_template {
             val(num_threads),
             val(use_piscem),
             path(adt_reference_barcode_csv_gz),
-            path(hto_reference_barcode_csv_gz)
-
-        path simpleaf_index_path
-        path t2g_path
+            path(hto_reference_barcode_csv_gz),
+            path(simpleaf_index_path),
+            path(t2g_path)
 
     output:
         val sample_name
@@ -181,7 +192,8 @@ workflow {
     sample_sheet = Channel
       .fromPath(params.sample_sheet_tsv)
       .splitCsv(header:true, sep: "\t", strip: true)
-      .map{ row-> tuple(row.sample_name,
+      .map{ row -> tuple("index_id",
+                        row.sample_name,
                         row.rna_read1,
                         row.rna_read2,
                         row.adt_read1,
@@ -189,7 +201,7 @@ workflow {
                         row.hto_read1,
                         row.hto_read2)
       }
-    
+
     // parse parameters
     adt_reference_barcode_csv_gz = Channel.fromPath(params.adt_reference_barcode_csv_gz, checkIfExists: true)
     hto_reference_barcode_csv_gz = Channel.fromPath(params.hto_reference_barcode_csv_gz, checkIfExists: true)
@@ -202,7 +214,9 @@ workflow {
         .combine(use_piscem)
         .combine(adt_reference_barcode_csv_gz)
         .combine(hto_reference_barcode_csv_gz)
+        .combine(make_index.out, by: 0)
 
-    make_template(make_template_input, make_index.out.index_dir, make_index.out.t2g_path) | run_simpleaf_workflow
+
+    make_template(make_template_input) | run_simpleaf_workflow
 }
 
