@@ -270,7 +270,7 @@ local workflow = {
                     // If choosing this, change the null to the path to the whitelist file. 
                     "--explicit-pl": null, // or "--explicit-pl": "/path/to/pl",
                 },
-                "--chemistry": "10xv3",
+                "--chemistry": "$params.chemistry",
                 "--resolution": "cr-like",
                 "--expected-ori": "fw",
 
@@ -367,7 +367,13 @@ local workflow = {
                     // If choosing this, change the null to the path to the whitelist file. 
                     "--explicit-pl": null, // or "--explicit-pl": "/path/to/pl",
                 },
-                "--chemistry": "1{b[16]u[12]}2{r[15]}",
+                "--chemistry": 
+                    if "$params.chemistry" == "10xv3"  
+                    then
+                        "1{b[16]u[12]}2{r[15]}"
+                    else
+                         "1{b[16]u[10]}2{r[15]}"
+                    ,
                 "--resolution": "cr-like",
                 "--expected-ori": "fw",
 
@@ -798,8 +804,3 @@ local workflow4 = utils.add_index_dir_for_simpleaf_index_quant_combo(workflow3) 
 workflow4
 
 EOF
-
-export ALEVIN_FRY_HOME="af_home"
-simpleaf set-paths
-
-simpleaf workflow run --template ${sample_name}_instantiated_template.jsonnet --output ${sample_name}/simpleaf_workflow_output
