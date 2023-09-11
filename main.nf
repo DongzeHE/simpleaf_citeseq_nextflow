@@ -1,62 +1,67 @@
 // this process build the expanded index for simpleaf
 process rna_simpleaf_index_expanded {
-    publishDir "${params.output_dir}/${sample_name}", mode: 'copy'
+    publishDir "${params.output_dir}", mode: 'copy'
     input:
         path genome
         path gtf
 
     output:
         tuple val("index_id"),
-            path("simpleaf_index"),
-            path("simpleaf_index/index/t2g_3col.tsv")
-        // path "simpleaf_index", emit: index_dir
-        // path "simpleaf_index/index/t2g_3col.tsv", emit: t2g_path
+            path("simpleaf_index/index"),
+            path("simpleaf_index/index/t2g_3col.tsv"), emit: index_t2g
+        path "simpleaf_index", emit: index_dir
+        path "simpleaf_index/index/t2g_3col.tsv", emit: t2g_path
     script:
-        cmd = "simpleaf index --output simpleaf_index --threads ${params.num_threads} --kmer-length ${params.kmer_length}"
+	p = params.rna_simpleaf_index
+        cmd = "simpleaf index --output simpleaf_index --threads ${params.num_threads} --kmer-length ${p.kmer_length}"
         // options
-        if (params.keep_duplicates) {
+        if (p.keep_duplicates) {
             cmd += " --keep-duplicates"
         }
-        if (params.sparse)  {
+        if (p.sparse)  {
             cmd += " --sparse"
         }
         // piscem options
-        if (params.use_piscem) {
-            cmd += " --use-piscem --minimizer-length ${params.minimizer_length}"
+        if (p.use_piscem) {
+            cmd += " --use-piscem --minimizer-length ${p.minimizer_length}"
         }
 
         // expanded reference options
-        cmd += " --fasta ${genome} --gtf ${gtf} --ref-type ${params.ref_type} --rlen ${params.read_length}"
+        cmd += " --fasta ${genome} --gtf ${gtf} --ref-type ${p.extended_transcriptome.ref_type} --rlen ${p.extended_transcriptome.rlen}"
 
-        if (params.dedup) {
+        if (p.extended_transcriptome.dedup) {
             cmd += " --dedup"
         }
-
-        if (params.spliced != null) {
-            cmd += " --spliced ${params.spliced}"
+        if (p.extended_transcriptome.spliced != null) {
+            cmd += " --spliced ${p.extended_transcriptome.spliced}"
         }
-        if (params.unspliced != null) {
-            cmd += " --unspliced ${params.unspliced}"
+        if (p.extended_transcriptome.unspliced != null) {
+            cmd += " --unspliced ${p.extended_transcriptome.unspliced}"
         }
 
         """
+        export ALEVIN_FRY_HOME="af_home"
+        simpleaf set-paths
+
+
         ${cmd}
         """
 }
 
 // this process build the expanded index for simpleaf
 process rna_simpleaf_index_refseq {
-    publishDir "${params.output_dir}/${sample_name}", mode: 'copy'
+    publishDir "${params.output_dir}", mode: 'copy'
     input:
         path genome
         path gtf
 
     output:
         tuple val("index_id"),
-            path("simpleaf_index"),
-            path("simpleaf_index/index/t2g.tsv")
-        // path "simpleaf_index", emit: index_dir
-        // path "simpleaf_index/index/t2g.tsv", emit: t2g_path
+            path("simpleaf_index/index"),
+            path("simpleaf_index/index/t2g.tsv"), emit: index_t2g
+        path "simpleaf_index", emit: index_dir
+        path "simpleaf_index/index/t2g.tsv", emit: t2g_path
+
     script:
         cmd = "simpleaf index --output simpleaf_index --threads ${params.num_threads} --kmer-length ${params.kmer_length}"
         // options
@@ -76,7 +81,10 @@ process rna_simpleaf_index_refseq {
         
         // execute command
 
-        """
+        """	
+        export ALEVIN_FRY_HOME="af_home"
+        simpleaf set-paths
+
         ${cmd}
         """
 }
@@ -91,9 +99,9 @@ process rna_simpleaf_index_existing {
     output:
         tuple val("index_id"),
             path(index_dir),
-            path(t2g_path)
-        // path index_dir, emit: index_dir
-        // path t2g_path, emit: t2g_path
+            path(t2g_path), emit: index_t2g
+        path index_dir, emit: index_dir
+        path t2g_path, emit: t2g_path
     script:
         """
         cp $t2g_path $index_dir
@@ -106,19 +114,22 @@ workflow make_index {
         ep = params.rna_simpleaf_index.extended_transcriptome
         eid = params.rna_simpleaf_index.existing_index_dir
         if (eid.index_dir != null) {
+	    println "Using provide index."
             simpleaf_index_dir = rna_simpleaf_index_existing(eid.index_dir, eid.t2g_path)
         } else if (params.rna_simpleaf_index.ref_seq != null) {
+	    println "building index directly from the provided ref-seq file." 
             ref_seq = Channel.fromPath(params.rna_simpleaf_index.ref_seq, checkIfExists: true)
             simpleaf_index_dir = rna_simpleaf_index_refseq(ref_seq)
         } else if (ep.fasta != null && ep.gtf != null) {
+	    println "building ${ep.ref_type} index."
             fasta = Channel.fromPath(ep.fasta, checkIfExists: true)
-            gtf = Channel.fromPath(ep.fasta, checkIfExists: true)
+            gtf = Channel.fromPath(ep.gtf, checkIfExists: true)
             simpleaf_index_dir = rna_simpleaf_index_expanded(fasta, gtf)
         } else {
             error "None of the index options are correctly specified; Cannot proceed"
         }
     emit:
-        simpleaf_index_dir
+        simpleaf_index_dir.index_t2g
         // index_dir = simpleaf_index_dir.index_dir
         // t2g_path = simpleaf_index_dir.t2g_path
 }
